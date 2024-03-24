@@ -1,0 +1,155 @@
+原理：
+1、nuxt会根据路由和对应的组件信息，生成两份JS，一份用于服务端，一份用于客户端，两份JS内容可能不一样。
+2、当浏览器发起一个路由请求时，服务器会读取服务端JS的内容，然后找到对应的路由配置，根据路由配置的组件，如果对应的组件内容中有接口请求，服务端就直接请求接口数据，然后把对应的数据和组件的JS转译渲染为html字符串然会给客户端。
+3、客户端会去请求客户端那一份JS，然后找到对应的路由的JS，把服务端返回的html字符串进行双向绑定和UI框架的组件渲染。
+4、之后的路由请求都通过vue-router接管。
+
+整体过程如下：参考链接：https://juejin.cn/post/7306018529844592692?searchId=20240323212749044084C503A65ABCCE2D
+// 服务端：初始化vue、render
+export async function render(url, manifest) {
+  // 拿到实例
+  const { app, router, store } = createApp();
+  try {
+    // 路由跳转，在服务端渲染对应组件模板
+    await router.push(url);
+    // 确保初始化之后执行
+    await router.isReady();
+    const ctx = {};
+    // 渲染模板
+    const html = await renderToString(app, ctx);
+    // 处理css模板等内容 内容
+    const preloadLinks = renderPreloadLinks(ctx.modules, manifest);
+    const teleports = renderTeleports(ctx.teleports);
+    //拿到全局数据
+    const state = JSON.stringify(store.state.value);
+    return [html, state, preloadLinks, teleports];
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+
+客服端：在客户端实现在初始化一次`vue实例`激活当前`vue`应用
+import { createApp } from './main';
+import 'uno.css';
+import '@/assets/css/index.css';
+import 'element-plus/theme-chalk/base.css';
+const { app, router, store } = createApp();
+router.isReady().then(() => {
+  app.mount('#app');
+});
+
+
+---------------------------------------------------------------------------------------
+配置：
+环境覆盖：
+// $production和$development会分别用作不同开发模式下的配置
+export default defineNuxtConfig({
+  $production: {},
+  $development: {}
+})
+环境变量和私有令牌：
+runtimeConfig API会把环境变量这样的值暴露给应用程序的其余部分，这些值应该在nuxt.config中定义。
+export default defineNuxtConfig({
+  runtimeConfig: {
+    // 只在服务器端可用的私有键
+    apiSecret: '123',
+    // public中的键也可以在客户端使用
+    public: {
+      apiBase: '/api'
+    }
+  }
+})
+使用：pages/index.vue
+<script setup lang="ts">
+const runtimeConfig = useRuntimeConfig()
+</script>
+应用程序配置:
+app.config.ts用于设置整个项目的设置项，其中的defineAppConfig助手函数在全局范围内无需导入即可使用。
+export default defineAppConfig({
+  title: 'Hello Nuxt',
+  theme: {
+    dark: true,
+    colors: {
+      primary: '#ff0000'
+    }
+  }
+})
+使用：useAppConfig()
+pages/index.vue:
+<script setup lang="ts">
+const appConfig = useAppConfig()
+</script>
+
+runtimeConfig与app.config:runtimeConfig和app.config都用于向应用程序的其余部分公开变量。runtimeConfig需要在构建后使用环境变量指定的私有或公共令牌，
+app.config在构建时确定的公共令牌，网站配置（如主题变体、标题）以及不敏感的项目配置等。
+
+配置其它插件库：
+名称	    配置文件        	    如何配置
+Nitro	nitro.config.ts	    在nuxt.config中使用nitro键
+PostCSS	postcss.config.js	在nuxt.config中使用postcss键
+Vite	vite.config.ts	    在nuxt.config中使用vite键
+webpack	webpack.config.ts	在nuxt.config中使用webpack键
+以下是其他常见配置文件的列表：
+名称	配置文件	如何配置
+TypeScript	tsconfig.json
+ESLint	    .eslintrc.js
+Prettier	.prettierrc.json
+Stylelint	.stylelintrc.json
+TailwindCSS	tailwind.config.js
+Vitest	    vitest.config.ts
+Vue配置：
+使用 Vite，如果你需要传递选项给 @vitejs/plugin-vue 或 @vitejs/plugin-vue-jsx，你可以在你的 nuxt.config 文件中进行配置。
+vite.vue    用于 @vitejs/plugin-vue。可以在这里查看可用选项。
+vite.vueJsx 用于 @vitejs/plugin-vue-jsx。可以在这里查看可用选项。
+nuxt.config.ts：
+export default defineNuxtConfig({
+  vite: {
+    vue: {
+      customElement: true
+    },
+    vueJsx: {
+      mergeProps: true
+    }
+  }
+})
+启用实验性 Vue 功能，你可能需要在 Vue 中启用实验性功能，例如 defineModel 或 propsDestructure。无论你使用哪个构建工具，Nuxt 都提供了一种简单的方法在 nuxt.config.ts 中进行配置：
+export default defineNuxtConfig({
+  vue: {
+    defineModel: true,
+    propsDestructure: true
+  }
+})
+
+
+app.vue为入口点，并为应用程序的每个路由渲染其内容。
+如果你熟悉 Vue，你可能会想知道 main.js 在哪里（通常用于创建 Vue 应用的文件）。Nuxt 在幕后完成了这个操作。
+
+components/目录中创建的组件，它们将自动在整个应用程序中可用，无需显式地导入。
+
+pages/ 目录中的每个文件都表示一个不同的路由。
+要使用页面，创建 pages/index.vue 文件并将 <NuxtPage /> 组件添加到 app.vue（或者删除 app.vue 以使用默认入口）。
+现在，你可以通过在 pages/ 目录中添加新文件来创建更多页面及其对应的路由。
+
+
+布局是页面的包装器，包含了多个页面的共同用户界面，如页眉和页脚。布局是使用 <slot /> 组件来显示页面内容的 Vue 文件。
+layouts/default.vue 文件将被默认使用。自定义布局可以作为页面元数据的一部分进行设置。
+如果你的应用程序只有一个布局，我们建议使用 app.vue 和 <NuxtPage />。
+使用：
+layouts/default.vue
+<template>
+  <div>
+    <div> this is layout default header</div>
+    <slot />
+    <div> this is layout default footer</div>
+  </div>
+</template>
+app.vue
+<template>
+  <NuxtLayout>  // 其实就相当于一个动态组件。
+    <nuxt-page></nuxt-page>
+  </NuxtLayout>
+</template>
+
+
+
