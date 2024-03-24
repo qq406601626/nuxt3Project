@@ -193,5 +193,51 @@ export default defineNuxtConfig({
   }
 })
 
+引入样式资源文件：
+<script>
+// 使用静态导入以实现服务器端兼容性
+import '~/assets/css/first.css'或者import 'animate.css'引入node_module的资源
+// 注意：动态导入不兼容服务器端
+import('~/assets/css/first.css')
+</script>
+<style>
+@import url("~/assets/css/second.css");或者@import url("animate.css")引入node_module的资源
+</style>
+
+通过nuxt.config配置全局css样式：
+nuxt.config.ts：Nuxt 将会将它包含在应用程序的所有页面中
+export default defineNuxtConfig({
+  css: ['~/assets/css/main.css']
+})
+或者引入node_module的资源
+export default defineNuxtConfig({
+  css: ['animate.css']
+})
+
+通过nuxt.config配置全局引入外部样式表：
+export default defineNuxtConfig({
+  app: {
+    head: {
+      link: [{ rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css' }]
+    }
+}})
+
+在单独某个路由或者某个组件中添加样式文件：可以使用 useHead 组合式函数在代码中动态设置 head 中的值：
+useHead({
+  link: [{ rel: 'stylesheet', href: 'https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css' }]
+})
+
+
+使用字体：通过css引入字体：
+将本地字体文件放在 ~/public/ 目录中，例如 ~/public/fonts。然后可以在样式表中使用 url() 引用它们。
+assets/css/main.css
+@font-face {
+  font-family: 'FarAwayGalaxy';
+  src: url('/fonts/FarAwayGalaxy.woff') format('woff');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 
 
