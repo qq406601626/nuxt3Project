@@ -151,5 +151,47 @@ app.vue
   </NuxtLayout>
 </template>
 
+使用自定义插件高级定制模板内容：
+你可以通过添加一个 Nitro 插件来完全控制 HTML 模板，该插件注册一个钩子函数。
+render:html 钩子函数的回调函数允许你在将 HTML 发送到客户端之前对其进行修改。
+server/plugins/extend-html.ts
+export default defineNitroPlugin((nitroApp) => {
+  nitroApp.hooks.hook('render:html', (html, { event }) => {
+    // 这将是 HTML 模板的对象表示形式。
+    console.log(html)
+    html.head.push(`<meta name="description" content="My custom description" />`)
+  })
+  // 你也可以在这里拦截响应。
+  nitroApp.hooks.hook('render:response', (response, { event }) => { console.log(response) })
+})
+
+public/目录中的内容会按原样作为服务器根目录下的公共资源提供。
+你可以通过应用程序的代码或浏览器的根URL / 获取 public/ 目录中的文件。
+例如，在 public/img/ 目录中引用一个图像文件，该文件可通过静态URL /img/nuxt.png 访问：
+
+assets/ 目录按约定包含了你希望构建工具（Vite或webpack）处理的所有资源。
+按照约定，Nuxt使用 assets/ 目录来存储这些文件，但该目录没有自动扫描功能，你可以使用任何其他名称。
+在应用程序的代码中，你可以通过使用 ~/assets/ 路径来引用位于 assets/ 目录中的文件。
+<template>
+  <img src="~/assets/img/nuxt.png" alt="Discover Nuxt 3" />
+</template>
+
+全局样式导入：
+要在你的Nuxt组件样式中全局插入语句，你可以在 nuxt.config 文件中使用 Vite 选项。
+示例
+在这个示例中，有一个 sass部分 文件，其中包含颜色变量，供你的Nuxt页面和组件使用。
+assets/_colors.scss
+export default defineNuxtConfig({
+  vite: {
+    css: {
+      preprocessorOptions: {
+        scss: {
+          additionalData: '@use "@/assets/_colors.scss" as *;'
+        }
+      }
+    }
+  }
+})
+
 
 
