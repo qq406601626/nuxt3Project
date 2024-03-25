@@ -239,5 +239,66 @@ assets/css/main.css
   font-display: swap;
 }
 
+页面路由规则：
+1、文件夹会充当路径
+2、index会充当/，和当平级的会追加文件名称作为路由
+3、文件夹下的[name].vue会作为/:name追加到后面作为路由
+
+获取路由参数：
+const route = useRoute()
+console.log(route.params.id)
+
+路由中间件：
+路由中间件在第一次刷新页面时是运行在服务端（在到达路由之前运行），之后都是在客户端运行。
+使用中间件：
+1、在路由所对应的组件中声明
+2、命名路由中间件，放置在middleware/目录中，文件的名称即为中间件的名称：
+middleware/auth.ts：（注意：路由中间件名称会转换为短横线分隔命名，因此someMiddleware会变成some-middleware。）
+export default defineNuxtRouteMiddleware((to, from) => {
+  if (isAuthenticated() === false) {
+    return navigateTo('/login')
+  }
+})
+pages/dashboard.vue：
+<script setup lang="ts">
+definePageMeta({
+  middleware: 'auth'
+})
+</script>
+3、全局路由中间件，放置在middleware/目录中（使用.global后缀），将在每次路由更改时自动运行。
+全局中间件比命名中间件先执行。
+
+路由验证：
+1、局部验证：通过页面中的definePageMeta()的validate属性提供路由验证。如果返回false，并且找不到其他匹配项，这将导致404错误。
+您还可以直接返回一个带有statusCode/statusMessage的对象以立即响应错误（其他匹配项将不会被检查）。
+如果您有更复杂的用例，可以使用匿名路由中间件代替。
+
+SEO：
+export default defineNuxtConfig({
+  app: {
+    head: {
+      charset: 'utf-8',
+      viewport: 'width=device-width, initial-scale=1',
+    }
+  }
+})
+可以自定义整个应用的头部。
+此方式不允许你提供响应式数据。我们建议在 app.vue 中使用 useHead()。
+为了使配置更简单，可以使用快捷方式：charset 和 viewport。你还可以在 类型 中提供下面列出的任何键。
+
+useHead：只对当前路由有效，跳转到其它路由后，其它需要再单独设置
+<script setup lang="ts">
+useHead({
+  title: '我的应用',
+  meta: [
+    { name: 'description', content: '我的神奇网站。' }
+  ],
+  bodyAttrs: {
+    class: 'test'
+  },
+  script: [ { innerHTML: 'console.log(\'Hello world\')' } ]
+})
+</script>
+
 
 
