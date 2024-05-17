@@ -9,5 +9,13 @@ export default defineNuxtConfig({
         }
       }
     }
-  }
+  },
+  devServer:{
+    port:3001
+  },
+  modules:[
+    async (inlineOptions, nuxt) => {
+      console.log('this is test module config')
+    }
+  ]
 })
