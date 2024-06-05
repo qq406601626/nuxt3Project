@@ -1,9 +1,14 @@
-<script setup lang="ts">
+<script setup>
+// definePageMeta({
+//   middleware: 'auth'
+// })
+// useHead({
+//   title:'about'
+// })
 definePageMeta({
-  middleware: 'auth'
-})
-useHead({
-  title:'about'
+  middleware:()=>{
+    console.log('this is about page middleware')
+  }
 })
 </script>
 

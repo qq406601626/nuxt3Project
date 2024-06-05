@@ -1,3 +1,34 @@
+-| pages/
+---| index.vue
+---| users-[group]/
+-----| [id].vue
+会转成pages/users-[group]/[id].vue
+
+总结：
+1、文件夹会转换成路径，文件名会转换成最后一级的路由地址，index.vue会被转换成/
+2、parent.vue
+   parent/index.vue
+如果同一个目录中存在同名的vue文件和文件夹，那么会把该文件作为父级路由，并使用该文件作为组件。然后文件夹中的文件作为子级路由。需要主要的是，父级路由的文件需要写上nuxt-page组件，如：
+[
+  {
+    path: '/parent',
+    component: '~/pages/parent.vue',
+    name: 'parent',
+    children: [
+      {
+        path: 'child',
+        component: '~/pages/parent/child.vue',
+        name: 'parent-child'
+      }
+    ]
+  }
+]
+区别：
+/pages/a/b/c/d.vue只是得到了一个/a/b/c/d的路由地址，而如果/pages/a/b/下既有c.vue文件和/c文件夹，那么会创建嵌套路由，即创建/a/b/c的路由，使用c.vue左右该路由的组件，然后创建/d的子路由。
+
+
+
+
 原理：
 1、nuxt会根据路由和对应的组件信息，生成两份JS，一份用于服务端，一份用于客户端，两份JS内容可能不一样。
 2、当浏览器发起一个路由请求时，服务器会读取服务端JS的内容，然后找到对应的路由配置，根据路由配置的组件，如果对应的组件内容中有接口请求，服务端就直接请求接口数据，然后把对应的数据和组件的JS转译渲染为html字符串然会给客户端。
