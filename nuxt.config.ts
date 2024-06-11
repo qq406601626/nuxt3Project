@@ -4,18 +4,12 @@ export default defineNuxtConfig({
   vite:{
     css:{
       preprocessorOptions:{
-        scss:{
-          additionalData: '@use "@/assets/style/test.scss" as *;'
-        }
+        scss:{}
       }
     }
   },
   devServer:{
     port:3001
   },
-  modules:[
-    async (inlineOptions, nuxt) => {
-      console.log('this is test module config')
-    }
-  ]
+  modules:[]
 })
